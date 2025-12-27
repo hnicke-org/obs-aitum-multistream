@@ -249,66 +249,66 @@ jobs:
           path: ${{ github.workspace }}/.ccache
           key: ${{ runner.os }}-${{ matrix.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
 
-  windows-build:
-    name: Build for Windows 🪟
-    runs-on: windows-2022
-    needs: check-event
-    defaults:
-      run:
-        shell: pwsh
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - name: Set Up Environment 🔧
-        id: setup
-        run: |
-          # Set Up Environment 🔧
-          if ( $Env:RUNNER_DEBUG -ne $null ) {
-            Set-PSDebug -Trace 1
-          }
-
-          $BuildSpec = Get-Content -Path buildspec.json -Raw | ConvertFrom-Json
-          $ProductName = $BuildSpec.name
-          $ProductVersion = $BuildSpec.version
-
-          "pluginName=${ProductName}" >> $env:GITHUB_OUTPUT
-          "pluginVersion=${ProductVersion}" >> $env:GITHUB_OUTPUT
-
-      - name: Build Plugin 🧱
-        uses: ./.github/actions/build-plugin
-        with:
-          target: x64
-          config: ${{ needs.check-event.outputs.config }}
-
-      - name: Create Code Signing Certificate
-        if: success() && github.event_name != 'pull_request'
-        run: |
-            New-Item -ItemType directory -Path certificate
-            Set-Content -Path certificate\certificate.txt -Value '${{ secrets.WINDOWS_CSC_LINK }}'
-            certutil -decode certificate\certificate.txt certificate\certificate.pfx
-
-      - name: Code Sign 64
-        if: success() && github.event_name != 'pull_request'
-        run: |
-          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.20348.0/x64/signtool.exe' sign /f certificate\certificate.pfx /p '${{ secrets.WINDOWS_CSC_PASS }}' /t http://timestamp.comodoca.com/authenticode ./release/${{ needs.check-event.outputs.config }}/${{ steps.setup.outputs.pluginName }}/bin/64bit/${{ steps.setup.outputs.pluginName }}.dll
-
-      - name: Package Plugin 📀
-        uses: ./.github/actions/package-plugin
-        with:
-          target: x64
-          config: ${{ needs.check-event.outputs.config }}
-          package: ${{ fromJSON(needs.check-event.outputs.package) }}
-
-      - name: Code Sign Installer
-        if: success() && github.event_name != 'pull_request'
-        run: |
-          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.20348.0/x64/signtool.exe' sign /f certificate\certificate.pfx /p '${{ secrets.WINDOWS_CSC_PASS }}' /t http://timestamp.comodoca.com/authenticode ./release/${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-windows-x64-Installer.exe
-
-      - name: Upload Artifacts 📡
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-windows-x64-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/release/${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-windows-x64*.*
+#  windows-build:
+#    name: Build for Windows 🪟
+#    runs-on: windows-2022
+#    needs: check-event
+#    defaults:
+#      run:
+#        shell: pwsh
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#          fetch-depth: 0
+#
+#      - name: Set Up Environment 🔧
+#        id: setup
+#        run: |
+#          # Set Up Environment 🔧
+#          if ( $Env:RUNNER_DEBUG -ne $null ) {
+#            Set-PSDebug -Trace 1
+#          }
+#
+#          $BuildSpec = Get-Content -Path buildspec.json -Raw | ConvertFrom-Json
+#          $ProductName = $BuildSpec.name
+#          $ProductVersion = $BuildSpec.version
+#
+#          "pluginName=${ProductName}" >> $env:GITHUB_OUTPUT
+#          "pluginVersion=${ProductVersion}" >> $env:GITHUB_OUTPUT
+#
+#      - name: Build Plugin 🧱
+#        uses: ./.github/actions/build-plugin
+#        with:
+#          target: x64
+#          config: ${{ needs.check-event.outputs.config }}
+#
+#      - name: Create Code Signing Certificate
+#        if: success() && github.event_name != 'pull_request'
+#        run: |
+#            New-Item -ItemType directory -Path certificate
+#            Set-Content -Path certificate\certificate.txt -Value '${{ secrets.WINDOWS_CSC_LINK }}'
+#            certutil -decode certificate\certificate.txt certificate\certificate.pfx
+#
+#      - name: Code Sign 64
+#        if: success() && github.event_name != 'pull_request'
+#        run: |
+#          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.20348.0/x64/signtool.exe' sign /f certificate\certificate.pfx /p '${{ secrets.WINDOWS_CSC_PASS }}' /t http://timestamp.comodoca.com/authenticode ./release/${{ needs.check-event.outputs.config }}/${{ steps.setup.outputs.pluginName }}/bin/64bit/${{ steps.setup.outputs.pluginName }}.dll
+#
+#      - name: Package Plugin 📀
+#        uses: ./.github/actions/package-plugin
+#        with:
+#          target: x64
+#          config: ${{ needs.check-event.outputs.config }}
+#          package: ${{ fromJSON(needs.check-event.outputs.package) }}
+#
+#      - name: Code Sign Installer
+#        if: success() && github.event_name != 'pull_request'
+#        run: |
+#          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.20348.0/x64/signtool.exe' sign /f certificate\certificate.pfx /p '${{ secrets.WINDOWS_CSC_PASS }}' /t http://timestamp.comodoca.com/authenticode ./release/${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-windows-x64-Installer.exe
+#
+#      - name: Upload Artifacts 📡
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: ${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-windows-x64-${{ needs.check-event.outputs.commitHash }}
+#          path: ${{ github.workspace }}/release/${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-windows-x64*.*
