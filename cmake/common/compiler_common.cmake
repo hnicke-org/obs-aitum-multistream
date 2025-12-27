@@ -55,6 +55,7 @@ set(
   -Wformat-security
   -Wvla
   -Wno-error=shorten-64-to-32
+  -Wno-error=deprecated-declarations
 )
 
 # clang options for C

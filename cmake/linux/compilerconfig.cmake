@@ -38,6 +38,7 @@ set(
   -Wunused-value
   -Wunused-variable
   -Wvla
+  -Wno-error=deprecated-declarations
 )
 
 add_compile_options(
