@@ -938,7 +938,7 @@ void OBSBasicSettings::AddServer(QFormLayout *outputsLayout, obs_data_t *setting
 	automationPageLayout->addRow(stopWithMain);
 
 	// Hook up
-	advancedTabWidget->addTab(videoPage, QString::fromUtf8(obs_module_text("VideoEncoderSettings")));
+	// advancedTabWidget->addTab(videoPage, QString::fromUtf8(obs_module_text("VideoEncoderSettings")));
 	advancedTabWidget->addTab(audioPage, QString::fromUtf8(obs_module_text("AudioEncoderSettings")));
 	advancedTabWidget->addTab(automationPage, QString::fromUtf8(obs_module_text("AutomationSettings")));
 	advancedGroupLayout->addWidget(advancedTabWidget, 1);
