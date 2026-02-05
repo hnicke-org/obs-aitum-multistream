@@ -1202,7 +1202,7 @@ void MultistreamDock::LoadVerticalOutputs(bool firstLoad)
 	calldata_init(&cd);
 	if (!proc_handler_call(ph, "aitum_vertical_get_stream_settings", &cd)) {
 		if (firstLoad) {                                         // only display warning on first load
-			showVerticalWarning(verticalCanvasOutputLayout); // show warning
+			// showVerticalWarning(verticalCanvasOutputLayout); // show warning
 		}
 		calldata_free(&cd);
 		return;
