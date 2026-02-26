@@ -348,7 +348,6 @@ MultistreamDock::MultistreamDock(QWidget *parent) : QFrame(parent)
 		configDialog->LoadSettings(settings);
 		configDialog->LoadVerticalSettings(true);
 		configDialog->LoadOutputStats(&oldVideo);
-		configDialog->SetNewerVersion(newer_version_available);
 		configDialog->setResult(QDialog::Rejected);
 		if (configDialog->exec() == QDialog::Accepted) {
 			if (current_config) {
@@ -557,8 +556,6 @@ void MultistreamDock::LoadSettingsFile()
 	} else {
 		blog(LOG_INFO, "[Aitum Multistream] Loaded configuration file");
 	}
-	partnerBlockTime = obs_data_get_int(config, "partner_block");
-
 	auto profiles = obs_data_get_array(config, "profiles");
 	auto pc = obs_data_array_count(profiles);
 	obs_data_t *pd = nullptr;
@@ -827,7 +824,6 @@ void MultistreamDock::SaveSettings()
 		config = obs_data_create();
 		blog(LOG_WARNING, "[Aitum Multistream] New configuration file");
 	}
-	obs_data_set_int(config, "partner_block", partnerBlockTime);
 	auto profiles = obs_data_get_array(config, "profiles");
 	if (!profiles) {
 		profiles = obs_data_array_create();
@@ -1117,82 +1113,7 @@ void MultistreamDock::stream_output_stop(void *data, calldata_t *calldata)
 
 void MultistreamDock::ApiInfo(QString info)
 {
-	auto d = obs_data_create_from_json(info.toUtf8().constData());
-	if (!d)
-		return;
-	auto data_obj = obs_data_get_obj(d, "data");
-	obs_data_release(d);
-	if (!data_obj)
-		return;
-	auto version = obs_data_get_string(data_obj, "version");
-	int major;
-	int minor;
-	int patch;
-	if (sscanf(version, "%d.%d.%d", &major, &minor, &patch) == 3) {
-		auto sv = MAKE_SEMANTIC_VERSION(major, minor, patch);
-		if (sv > MAKE_SEMANTIC_VERSION(PROJECT_VERSION_MAJOR, PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH)) {
-			newer_version_available = QString::fromUtf8(version);
-			configButton->setStyleSheet(QString::fromUtf8("background: rgb(192,128,0);"));
-		}
-	}
-	time_t current_time = time(nullptr);
-	if (current_time < partnerBlockTime || current_time - partnerBlockTime > 1209600) {
-		obs_data_array_t *blocks = obs_data_get_array(data_obj, "partnerBlocks");
-		size_t count = obs_data_array_count(blocks);
-		size_t added_count = 0;
-		for (size_t i = count; i > 0; i--) {
-			obs_data_t *block = obs_data_array_item(blocks, i - 1);
-			auto block_type = obs_data_get_string(block, "type");
-			QBoxLayout *layout = nullptr;
-			if (strcmp(block_type, "LINK") == 0) {
-				auto button = new QPushButton(QString::fromUtf8(obs_data_get_string(block, "label")));
-				button->setStyleSheet(QString::fromUtf8(obs_data_get_string(block, "qss")));
-				auto url = QString::fromUtf8(obs_data_get_string(block, "data"));
-				connect(button, &QPushButton::clicked, [url] { QDesktopServices::openUrl(QUrl(url)); });
-				auto buttonRow = new QHBoxLayout;
-				buttonRow->setContentsMargins(8, 0, 8, 0);
-				buttonRow->setSpacing(8);
-				buttonRow->addWidget(button);
-				layout = buttonRow;
-			} else if (strcmp(block_type, "IMAGE") == 0) {
-				auto image_data = QString::fromUtf8(obs_data_get_string(block, "data"));
-				if (image_data.startsWith("data:image/")) {
-					auto pos = image_data.indexOf(";");
-					auto format = image_data.mid(11, pos - 11);
-					QImage image;
-					if (image.loadFromData(QByteArray::fromBase64(image_data.mid(pos + 7).toUtf8().constData()),
-							       format.toUtf8().constData())) {
-						auto label = new AspectRatioPixmapLabel;
-						label->setPixmap(QPixmap::fromImage(image));
-						label->setAlignment(Qt::AlignCenter);
-						label->setStyleSheet(QString::fromUtf8(obs_data_get_string(block, "qss")));
-						auto labelRow = new QHBoxLayout;
-						labelRow->addWidget(label, 1, Qt::AlignCenter);
-						layout = labelRow;
-					}
-				}
-			}
-			if (layout) {
-				added_count++;
-				if (i == 1) {
-					auto closeButton = new QPushButton("🞫");
-					connect(closeButton, &QPushButton::clicked, [this, added_count] {
-						for (size_t j = 0; j < added_count; j++) {
-							auto item = mainLayout->takeAt(1);
-							RemoveLayoutItem(item);
-						}
-						partnerBlockTime = time(nullptr);
-						SaveSettings();
-					});
-					layout->addWidget(closeButton);
-				}
-				mainLayout->insertLayout(1, layout, 0);
-			}
-			obs_data_release(block);
-		}
-		obs_data_array_release(blocks);
-	}
-	obs_data_release(data_obj);
+	Q_UNUSED(info);
 }
 
 void MultistreamDock::LoadVerticalOutputs(bool firstLoad)
